@@ -1,4 +1,4 @@
-import { Checkbox, Form, Radio } from 'antd';
+import { Checkbox, Form, Radio, Select } from 'antd';
 import { useStore } from '../store';
 
 const sizes = ['XS', 'S', 'M', 'ML', 'L', 'XL', 'XXL'].map((size) => ({
@@ -22,12 +22,22 @@ export const Filter = () => {
     <Form>
       <Form.Item className="mb-2" label="尺寸">
         <Checkbox.Group
+          className='hidden sm:block'
           value={checkedSizes}
           options={sizes}
           onChange={(values) => {
             changeSizes(values as string[]);
           }}
         />
+        <Select
+          className="sm:hidden"
+          options={sizes}
+          mode="multiple"
+          value={checkedSizes}
+          onChange={(values) => {
+            changeSizes(values);
+          }}
+        ></Select>
       </Form.Item>
       <Form.Item className="mb-2" label="价格">
         <Radio.Group

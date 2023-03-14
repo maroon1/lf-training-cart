@@ -10,7 +10,7 @@ function App() {
 
   return (
     <Layout className='min-h-full'>
-      <Layout.Header className="z-10 sticky top-0 w-full">
+      <Layout.Header className="z-10 sticky top-0 w-full px-4 lg:px-8">
         <div className="flex items-center h-full">
           <div className="text-lg text-white">江南服装厂</div>
           <Toolbar className="flex-auto">
