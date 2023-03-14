@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 
 import { StateCreator } from 'zustand';
 import { ProductDto } from '../dtos';
@@ -34,8 +35,11 @@ export const createProductStore: StateCreator<
 
 export interface ProductInCart {
   [sku: string]: {
-    product: ProductDto;
-    amount: number;
+    [size: string]: {
+      product: ProductDto;
+      size: string;
+      amount: number;
+    };
   };
 }
 
@@ -44,11 +48,11 @@ export interface CartState {
   subtotal: number;
   products: ProductInCart;
   showCart: (show?: boolean) => void;
-  increase: (sku: string, amount?: number) => void;
-  decrease: (sku: string, amount?: number) => void;
-  changeProductAmount: (sku: string, amount: number) => void;
-  addProduct: (product: ProductDto, amount?: number) => void;
-  removeProdcut: (sku: string) => void;
+  increase: (sku: string, size: string, amount?: number) => void;
+  decrease: (sku: string, size: string, amount?: number) => void;
+  changeProductAmount: (sku: string, size: string, amount: number) => void;
+  addProduct: (product: ProductDto, size: string, amount?: number) => void;
+  removeProdcut: (sku: string, size: string) => void;
   clearCart: () => void;
 }
 
@@ -59,65 +63,51 @@ export const createCartSlice: StateCreator<AppState, [], [], CartState> = (
   show: false,
   subtotal: 0,
   products: {},
-  addProduct: (product, amount = 1) => {
-    const inCart = get().products[product.sku];
+  addProduct: (product, size, amount = 1) => {
+    const productInCart = get().products[product.sku]?.[size];
 
-    if (inCart) {
-      get().increase(product.sku.toString());
+    if (productInCart) {
+      get().increase(product.sku.toString(), size);
       return;
     }
 
     set((state) => {
-      return {
-        products: {
-          ...state.products,
-          [product.sku]: {
-            product,
-            amount,
-          },
-        },
+      state.products[product.sku] ??= {};
+      state.products[product.sku][size] = {
+        amount,
+        product,
+        size,
       };
+
+      return state;
     });
   },
-  changeProductAmount: (sku: string, amount: number) => {
-    const inCard = get().products[sku];
+  changeProductAmount: (sku: string, size: string, amount: number) => {
+    const inCard = get().products[sku]?.[size];
 
     if (!inCard) {
       return;
     }
 
     set((state) => {
-      return {
-        products: {
-          ...state.products,
-          [sku]: {
-            product: state.products[sku].product,
-            amount: amount ?? 1,
-          },
-        },
-      };
+      state.products[sku][size].amount = amount;
+      return state;
     });
   },
-  increase: (sku: string, amount = 1) => {
-    const product = get().products[sku];
+  increase: (sku, size, amount = 1) => {
+    const product = get().products[sku]?.[size];
 
     if (!product) {
       return;
     }
 
     set((state) => {
-      return {
-        products: {
-          ...state.products,
-          [sku]: {
-            product: state.products[sku].product,
-            amount: state.products[sku].amount + amount,
-          },
-        },
-      };
+      state.products[sku][size].amount += amount;
+
+      return state;
     });
   },
-  decrease: (sku: string, amount = 1) => {
+  decrease: (sku, size, amount = 1) => {
     const inCart = get().products[sku];
 
     if (!inCart) {
@@ -125,32 +115,24 @@ export const createCartSlice: StateCreator<AppState, [], [], CartState> = (
     }
 
     set((state) => {
-      const newAmount = Math.min(1, state.products[sku].amount - amount);
+      const newAmount = Math.min(1, state.products[sku][size].amount - amount);
 
       if (newAmount === 0) {
         return state;
       }
 
-      return {
-        products: {
-          ...state.products,
-          [sku]: {
-            ...state.products[sku],
-            amount: newAmount,
-          },
-        },
-      };
+      state.products[sku][size].amount = newAmount;
+
+      return state;
     });
   },
-  removeProdcut: (sku: string) => {
+  removeProdcut: (sku, size) => {
     set((state) => {
-      delete state.products[sku];
+      if (state.products[sku]?.[size]) {
+        delete state.products[sku][size];
+      }
 
-      return {
-        products: {
-          ...state.products,
-        },
-      };
+      return state;
     });
   },
   clearCart: () => {
@@ -168,7 +150,11 @@ export const createCartSlice: StateCreator<AppState, [], [], CartState> = (
 export const useTotalProducts = () =>
   useStore((state) =>
     Object.values(state.products).reduce((acc, cur) => {
-      acc += cur.amount;
+      acc += Object.values(cur).reduce((acc, cur) => {
+        acc += cur.amount;
+
+        return acc;
+      }, 0);
       return acc;
     }, 0),
   );
@@ -176,7 +162,12 @@ export const useTotalProducts = () =>
 export const useSubtotal = () =>
   useStore((state) =>
     Object.values(state.products).reduce((acc, cur) => {
-      acc += cur.product.price * cur.amount;
+      acc += Object.values(cur).reduce((acc, cur) => {
+        acc += cur.product.price * cur.amount;
+
+        return acc;
+      }, 0);
+
       return acc;
     }, 0),
   );
@@ -184,20 +175,25 @@ export const useSubtotal = () =>
 export const useMaxInstallments = () =>
   useStore((state) =>
     Math.max(
-      ...Object.values(state.products).map(
-        (item) => item.product.installments ?? 0,
+      ...Object.values(state.products).flatMap((item) =>
+        Object.values(item).map(
+          (innerItem) => innerItem.product.installments ?? 0,
+        ),
       ),
     ),
   );
 
 export type AppState = CartState & ProductState;
 
-export const useStore = create<AppState, [['zustand/persist', AppState]]>(
+export const useStore = create<
+  AppState,
+  [['zustand/persist', AppState], ['zustand/immer', AppState]]
+>(
   persist(
-    (...a) => ({
+    immer((...a) => ({
       ...createCartSlice(...a),
       ...createProductStore(...a),
-    }),
+    })),
     { name: 'cart-store' },
   ),
 );

@@ -49,7 +49,7 @@ export class ProductService {
 
       setTimeout(() => {
         resolve(products);
-      }, randomRange(250, 1000));
+      }, randomRange(1000, 2000));
     });
   }
 }

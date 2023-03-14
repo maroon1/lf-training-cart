@@ -1,5 +1,5 @@
 import { App, Button, Empty, InputNumber, List } from 'antd';
-import { FC } from 'react';
+import { FC, Fragment } from 'react';
 import { ProductDto } from '../dtos';
 import {
   ProductInCart,
@@ -12,10 +12,11 @@ import {
 interface ProductItemProps {
   product: ProductDto;
   amount: number;
+  size: string;
 }
 
 const ProductItem: FC<ProductItemProps> = (props) => {
-  const { amount, product } = props;
+  const { amount, product, size } = props;
 
   const changeProductAmount = useStore((state) => state.changeProductAmount);
 
@@ -31,7 +32,7 @@ const ProductItem: FC<ProductItemProps> = (props) => {
           {product.title}
         </h4>
         <div className="text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap">
-          X {product.style && <>| {product.style}</>}
+          {size} {product.style && <>| {product.style}</>}
         </div>
         <div>
           <span className="text-xs">{product.currencyFormat}</span>
@@ -50,7 +51,7 @@ const ProductItem: FC<ProductItemProps> = (props) => {
                 return;
               }
 
-              changeProductAmount(product.sku.toString(), value);
+              changeProductAmount(product.sku.toString(), size, value);
             }}
           />
         </div>
@@ -75,22 +76,30 @@ const ProductList: FC<ProductListProps> = (props) => {
   ) : (
     <List>
       {data.map(([sku, item]) => (
-        <List.Item
-          key={sku}
-          extra={
-            <Button
-              type="text"
-              danger
-              onClick={() => {
-                removeProduct(sku);
-              }}
+        <Fragment key={sku}>
+          {Object.entries(item).map(([size, item]) => (
+            <List.Item
+              key={size}
+              extra={
+                <Button
+                  type="text"
+                  danger
+                  onClick={() => {
+                    removeProduct(sku, size);
+                  }}
+                >
+                  删除
+                </Button>
+              }
             >
-              删除
-            </Button>
-          }
-        >
-          <ProductItem product={item.product} amount={item.amount} />
-        </List.Item>
+              <ProductItem
+                product={item.product}
+                amount={item.amount}
+                size={item.size}
+              />
+            </List.Item>
+          ))}
+        </Fragment>
       ))}
     </List>
   );
@@ -130,7 +139,7 @@ export const Cart: FC = () => {
   const totalAmount = useTotalProducts();
   const subtotal = useSubtotal();
   const installments = useMaxInstallments();
-  const { modal } = App.useApp();
+  const { modal, message } = App.useApp();
 
   const onCheckout = () => {
     modal.confirm({
@@ -138,6 +147,7 @@ export const Cart: FC = () => {
       content: `共 ${totalAmount} 件商品，总计 $${subtotal}，确定结算？`,
       onOk() {
         clear();
+        message.success(`结算完成，共支付 $${subtotal}`)
       },
     });
   };

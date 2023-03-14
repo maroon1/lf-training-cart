@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
-import { Button, Card, Skeleton } from 'antd';
-import { FC } from 'react';
+import { App, Button, Card, Skeleton } from 'antd';
+import { FC, useState } from 'react';
 
 import { ProductDto } from '../dtos';
 import { useStore } from '../store';
@@ -58,7 +58,7 @@ const Sizes = styled.div`
   display: flex;
 `;
 
-const Size = styled.button`
+const Size = styled.button<{ active?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,7 +67,7 @@ const Size = styled.button`
   border-radius: 50%;
   margin: 2px 2px;
   color: #fff;
-  background-color: #000;
+  background-color: ${(props) => (props.active ? '#1677ff' : '#000')};
   font-size: 12px;
 `;
 
@@ -80,6 +80,8 @@ export const ProductLoading = () => {
 };
 
 export const Product: FC<ProductProps> = (props) => {
+  const { message } = App.useApp();
+  const [currentSize, setSize] = useState(props.data.availableSizes[0]);
   const addProduct = useStore((state) => state.addProduct);
 
   const { data } = props;
@@ -95,7 +97,15 @@ export const Product: FC<ProductProps> = (props) => {
           {data.availableSizes.length > 0 && (
             <Sizes>
               {data.availableSizes.map((size) => (
-                <Size key={size}>{size}</Size>
+                <Size
+                  key={size}
+                  active={currentSize === size}
+                  onClick={() => {
+                    setSize(size);
+                  }}
+                >
+                  {size}
+                </Size>
               ))}
             </Sizes>
           )}
@@ -109,19 +119,24 @@ export const Product: FC<ProductProps> = (props) => {
           <span className="text-2xl font-bold">{integer}</span>
           <span className="text-base">.{fractional}</span>
         </p>
-        <p className="text-gray-500">
-          或分 {data.installments} 期，每期
-          <span className="font-bold">
-            ${(data.price / data.installments).toFixed(2)}
-          </span>
-        </p>
+        {data.installments > 0 ? (
+          <p className="text-gray-500 text-sm">
+            或分 {data.installments} 期，每期
+            <span className="font-bold">
+              ${(data.price / data.installments).toFixed(2)}
+            </span>
+          </p>
+        ) : (
+          <div className="text-sm whitespace-pre"> </div>
+        )}
         <Button
           className="mt-2"
           type="primary"
           ghost
           block
           onClick={() => {
-            addProduct(data);
+            addProduct(data, currentSize);
+            message.success(`「${data.title} - ${currentSize}」已添加到购物车`);
           }}
         >
           添加到购物车
