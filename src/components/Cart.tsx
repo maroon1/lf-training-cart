@@ -142,12 +142,17 @@ export const Cart: FC = () => {
   const { modal, message } = App.useApp();
 
   const onCheckout = () => {
+    if (!Object.keys(products).length) {
+      message.info('购物车是空的，请添加你心仪的商品到购物车吧');
+      return;
+    }
+
     modal.confirm({
       title: '结算',
       content: `共 ${totalAmount} 件商品，总计 $${subtotal}，确定结算？`,
       onOk() {
         clear();
-        message.success(`结算完成，共支付 $${subtotal}`)
+        message.success(`结算完成，共支付 $${subtotal}`);
       },
     });
   };

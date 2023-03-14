@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  cart:
+    image: '${COMPOSE_PROJECT_NAME:-app}/${IMAGE_NAME:-cart}:${IMAGE_VERSION:-latest}'
+    build:
+      context: .
+      args:
+        - ARTIFACTS_PATHS
+    environment:
+      - API_URL
+      - NGINX_SERVER_CONFIG
+      - BASE_HREF=/
+      - PROXY_PATH_PREFIX=/api/
+      - WEBSOCKET_PATH_PREFIX=/ws/
+    ports:
+      - ${NGINX_PORT:-4200}:80

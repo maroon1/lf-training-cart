@@ -1,0 +1,166 @@
+server {
+    listen 80;
+    server_name _;
+    # 关闭请求体大小的限制
+    client_max_body_size 0;
+
+    # 设置字符集为 UTF-8 避免中文出现乱码
+    charset utf-8;
+
+    #access_log /var/log/nginx/host.access.log main;
+    # 查看更详细一点的日志信息
+    # 如果需要最详细的日志信息需要使用 nginx-debug -g 'daemon off; 命令启动
+    #error_log /var/log/nginx/error.log debug;
+
+    # 判断是否正确设置了 baseHref 变量，baseHref 应以 “/” 开头和结尾，如果设置错误则直接报错
+    # https://angular.io/guide/deployment#the-base-tag
+    set $base_href ${BASE_HREF};
+    set $invalid_base_href true;
+    if ($base_href ~* ^/(.+/)*$) {
+      set $invalid_base_href false;
+    }
+    if ($invalid_base_href = true) {
+      return 500;
+    }
+    # 当 --baseHref 不是根路径的时候需要先移除 baseHref，以便后续步骤都能够统一按照根路径处理
+    if ($base_href != /) {
+      rewrite_log on;
+      # https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#rewrite
+      rewrite ^${BASE_HREF}(.*)$ /$1 last;
+    }
+
+    # 使用零拷贝技术，可以提升文件的传送效率
+    # https://docs.nginx.com/nginx/admin-guide/web-server/serving-static-content/#enabling-sendfile
+    # https://nginx.org/en/docs/http/ngx_http_core_module.html#sendfile
+    sendfile on;
+    sendfile_max_chunk 1m;
+
+    # 开启 GZip 压缩
+    # https://docs.nginx.com/nginx/admin-guide/web-server/compression/#enabling-compression
+    # https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip
+    gzip on;
+    # 压缩级别，范围为 1-9，值越大压缩率大，默认为 1
+    # 压缩率并非越大越好，越往后提升的压缩效果越小而CPU资源消耗却越多
+    #gzip_comp_level 3;
+    # 指定要压缩的 MIME 类型，text/html 类型总会被压缩
+    # ⚠️ 不要用于压缩二进制文件，gzip 不擅长压缩二进制文件
+    gzip_types text/css application/javascript image/svg+xml;
+    # 指定要压缩的响应大小，默认为 20 字节，通过 Content-Length 响应头识别
+    gzip_min_length 100;
+    # 默认 NGINX 不会压缩代理服务器发来的请求（通过 Via 请求d头识别）
+    # 大多数时候只会压缩不被代理服务器缓存的请求，所以可以指定需要压缩的响应类型，当然也可以
+    # 指定参数为 any，这样子所有的响应都会被压缩
+    gzip_proxied no-cache no-store private expired auth;
+
+    # 设置默认的索引文件名，默认就是 index.html
+    # https://nginx.org/en/docs/http/ngx_http_index_module.html#index
+    #index index.html;
+
+    root /usr/share/nginx/html/;
+
+    location / {
+      # 缓存静态资源，30 天有效期，index.html 除外
+      # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#caching_static_assets
+      add_header Cache-Control "public, max-age=2592000, immutable";
+
+      # 防止 index.html 被缓存
+      # 如果 index.html 被缓存会导致获取的都是旧的 index.html 所引用的静态资源
+      # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#preventing_caching
+      if ($uri ~* /index.html?$) {
+        # no-store 指令用来防止缓存
+        # 同时设置 max-age=0 来清理之前的缓存
+        add_header Cache-Control "no-store, max-age=0";
+      }
+
+      ## 替换 base 标签中的 href 值
+      # 该配置一般是在上级 NGINX 中进行设置
+      # 一般的使用场景是，当需要通过上级 NGINX 以子路径的方式分配域名时，此时需要为页面 URL
+      # 添加一个路径前缀，为了避免依赖上级 NGINX 配置的路径，需要在上级 NGINX 中重写 baseHref
+      # 的值，以避免添加子路径后，页面资源路径错误的问题
+      # 具体原理可参照前面 baseHref 的设置说明
+      #set $base_href_tag '<base href="${BASE_HREF}"';
+      # https://nginx.org/en/docs/http/ngx_http_sub_module.html
+      #sub_filter '<base href="/"' $base_href_tag;
+
+      # https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files
+      try_files $uri /index.html;
+    }
+
+    # assets 文件夹中的文件没有 hash，所以缓存过期后必须重新校验
+    # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#requiring_revalidation
+    location /assets/ {
+      # 每次都要重新校验
+      #add_header Cache-Control "no-cache";
+      # 1小时后需要重新校验
+      add_header Cache-Control "max-age=3600, must-revalidate";
+
+      if (!-e $request_filename){
+        return 404 "$realpath_root$uri 未找到。\n文件不存在或代理服务器配置有误";
+      }
+    }
+
+    # 请求的 JavaScript 和 CSS 文件如果没有找到就直接返回 404
+    # 有时候由于代理配置的问题可能导致文件问找到的情况下，错误的返回 index.html 文件而导
+    # 致无法直观的看出配置问题，不利于调试
+    location ~* /.+\.(css|js)$ {
+      add_header Cache-Control "public, max-age=604800, immutable";
+
+      if (!-e $request_filename){
+        return 404 "$realpath_root$uri 未找到。\n文件不存在或代理服务器配置有误";
+      }
+    }
+
+    location ${PROXY_PATH_PREFIX} {
+      # ┌─────────────────────────────────────────────────┐
+      # │                      href                       │
+      # ├──────────┬──┬────────────────────────┬──────────┤
+      # │ protocol │  │          host          │   path   │
+      # │          │  ├─────────────────┬──────┼──────────┤
+      # │          │  │    hostname     │ port │ pathname │
+      # │          │  ├─────────────────┴──────┼──────────┤
+      # │  https:   //  sub.example.com : 8080   /p/a/t/h │
+      # ├──────────┴──┴─────────────────┴──────┼──────────┤
+      # │                origin                │ pathname │
+      # └──────────────────────────────────────┴──────────┘
+      # 如上图所示
+      # 如果 API_URL 指定了的是 href 则，其 path 部分会替换掉 location 的参数那部分内容
+      # 如果只指定了 origin，那么 $uri 将直接拼接到 origin 后
+      # https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/#passing-a-request-to-a-proxied-server
+      proxy_pass ${API_URL};
+      proxy_cache off;
+      # 将 Host 设置为原始 $host 变量，而不是默认使用 $proxy_host
+      # https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/#passing-request-headers
+      proxy_set_header Host $host:$server_port;
+      # 将实际的 IP 下传给被代理服务器
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # WebSocket 代理设置
+    # https://docs.nginx.com/nginx/deployment-guides/load-balance-third-party/node-js/#configuring-load-balancing-of-websocket-traffic
+    # https://www.nginx.com/blog/websocket-nginx/
+    # https://nginx.org/en/docs/http/websocket.html
+    location ${WEBSOCKET_PATH_PREFIX} {
+      proxy_pass ${API_URL};
+      proxy_cache off;
+      proxy_http_version 1.1;
+      proxy_set_header Host $host:$server_port;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # 通过环境变量注入的 nginx server 指令配置 #
+    # ⚠️ 当不需要的时候需要将该变量设置为空字符串 #
+    ${NGINX_SERVER_CONFIG}
+
+    #error_page 404 /404.html;
+
+    # redirect server error pages to the static page /50x.html
+    #
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
