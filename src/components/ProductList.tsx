@@ -1,10 +1,10 @@
-import { Col, Empty, Row } from 'antd';
+import { Button, Col, Empty, Row } from 'antd';
 import { FC } from 'react';
 import { useProduct } from '../hooks';
 import { Product, ProductLoading } from './Product';
 
 export const ProductList: FC = () => {
-  const { data, isLoading, error } = useProduct();
+  const { data, isLoading, error, refetch } = useProduct();
 
   const total = data?.length ?? 0;
 
@@ -21,7 +21,20 @@ export const ProductList: FC = () => {
   }
 
   if (error) {
-    return <Empty description="获取商品列表失败" />;
+    return (
+      <div className="flex flex-col items-center py-6">
+        <Empty description="获取商品列表失败，请刷新重试" />
+        <Button
+          className='mt-4'
+          type="primary"
+          onClick={() => {
+            refetch();
+          }}
+        >
+          重试
+        </Button>
+      </div>
+    );
   }
 
   return (

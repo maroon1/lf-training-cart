@@ -17,5 +17,6 @@ export const useProduct = () => {
       return productService.getProducts({ sizes }, { sort });
     },
     staleTime: 5000,
+    retry: false,
   });
 };

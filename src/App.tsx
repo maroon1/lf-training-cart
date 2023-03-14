@@ -9,7 +9,7 @@ function App() {
   const total = useTotalProducts();
 
   return (
-    <Layout>
+    <Layout className='min-h-full'>
       <Layout.Header className="z-10 sticky top-0 w-full">
         <div className="flex items-center h-full">
           <div className="text-lg text-white">江南服装厂</div>
@@ -26,7 +26,7 @@ function App() {
           </Toolbar>
         </div>
       </Layout.Header>
-      <Layout.Content>
+      <Layout.Content >
         <div className="flex flex-col max-w-5xl mx-auto p-4">
           <Filter />
           <ProductList />

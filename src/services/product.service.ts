@@ -24,7 +24,7 @@ export class ProductService {
     query?: ProductQuery,
     pageable?: PageRequest<ProductDto>,
   ): Promise<ProductDto[]> {
-    return new Promise<ProductDto[]>((resolve) => {
+    return new Promise<ProductDto[]>((resolve, reject) => {
       let products = [...data.data.products];
 
       if (query?.sizes?.length) {
@@ -48,7 +48,11 @@ export class ProductService {
       }
 
       setTimeout(() => {
-        resolve(products);
+        if (Math.random() > 0.5) {
+          reject(new Error('未知错误'));
+        } else {
+          resolve(products);
+        }
       }, randomRange(1000, 2000));
     });
   }
