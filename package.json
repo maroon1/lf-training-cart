@@ -2,6 +2,7 @@
   "name": "cart",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://maroon1.github.io/lf-training-cart/",
   "packageManager": "pnpm@7.29.1",
   "dependencies": {
     "@ant-design/icons": "^5.0.1",
@@ -17,6 +18,7 @@
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "antd": "^5.3.0",
+    "gh-pages": "^5.0.0",
     "immer": "^9.0.19",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
