@@ -1,7 +1,7 @@
 import { expect, Page, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('http://localhost:3000');
+  await page.goto('http://localhost:3000/lf-training-cart');
 });
 
 test('具有标题', async ({ page }) => {
