@@ -10,8 +10,8 @@ services:
     environment:
       - API_URL
       - NGINX_SERVER_CONFIG
-      - BASE_HREF=/
-      - PROXY_PATH_PREFIX=/api/
-      - WEBSOCKET_PATH_PREFIX=/ws/
+      - BASE_HREF
+      - PROXY_PATH_PREFIX
+      - WEBSOCKET_PATH_PREFIX
     ports:
       - ${NGINX_PORT:-4200}:80
