@@ -39,6 +39,20 @@ test.describe('购物车', () => {
     await test.expect(cardDrawer).toBeVisible();
   });
 
+  test('刷新页面后依然保持购物车状态', async ({ page }) => {
+    const addProductBtn = page.locator('.ant-btn').first();
+    await addProductBtn.click();
+
+    await page.reload();
+
+    const cartIcon = page.getByRole('button', { name: 'shopping-cart' });
+    await test.expect(cartIcon).toContainText('1');
+
+    await cartIcon.click();
+
+    await productShouldBeInCart(page)
+  });
+
   test('点击关闭购物车图标应当能够关闭购物车', async ({ page }) => {
     const cartIcon = page.getByRole('button', { name: 'shopping-cart' });
     await cartIcon.click();
@@ -55,12 +69,12 @@ test.describe('购物车', () => {
   test('应当能够正常添加删除商品', async ({ page }) => {
     await addProductAndShowCart(page);
 
-    const productInCart = productShouldBeInCart(page);
+    const productInCart = await productShouldBeInCart(page);
 
     const removeBtn = page.getByRole('button', { name: '删除' });
     await removeBtn.click();
 
-    await test.expect(productInCart).not.toBeVisible();
+    await test.expect(productInCart).toBeHidden();
   });
 
   test('一次应当只添加一件商品到购物车', async ({ page }) => {
