@@ -20,6 +20,8 @@ export interface ProductQuery {
 export type ProductFilter = ProductQuery & PageRequest<ProductDto>;
 
 export class ProductService {
+  private mockError = false;
+
   getProducts(
     query?: ProductQuery,
     pageable?: PageRequest<ProductDto>,
@@ -48,11 +50,11 @@ export class ProductService {
       }
 
       setTimeout(() => {
-        if (Math.random() > 0.5) {
+        if (this.mockError && Math.random() > 0.5) {
           reject(new Error('未知错误'));
-        } else {
-          resolve(products);
         }
+
+        resolve(products);
       }, randomRange(1000, 2000));
     });
   }

@@ -73,7 +73,7 @@ const Size = styled.button<{ active?: boolean }>`
 
 export const ProductLoading = () => {
   return (
-    <Card cover={<LoadingImage active />}>
+    <Card data-testid="loading-card" cover={<LoadingImage active />}>
       <Skeleton active />
     </Card>
   );
@@ -93,7 +93,7 @@ export const Product: FC<ProductProps> = (props) => {
       className="relative"
       cover={
         <ProductImage sku={data.sku}>
-          {data.isFreeShipping && <FreeShipping>包邮</FreeShipping>}
+          {data.isFreeShipping && <FreeShipping data-testid="freeshipping">包邮</FreeShipping>}
           {data.availableSizes.length > 0 && (
             <Sizes>
               {data.availableSizes.map((size) => (
@@ -113,14 +113,14 @@ export const Product: FC<ProductProps> = (props) => {
       }
     >
       <div className="flex flex-col items-center">
-        <p className="h-12 overflow-hidden">Cropped Stay Groovy off white</p>
+        <p className="h-12 overflow-hidden">{data.title}</p>
         <p>
           <span className="text-xs">{data.currencyFormat}</span>
           <span className="text-2xl font-bold">{integer}</span>
           <span className="text-base">.{fractional}</span>
         </p>
         {data.installments > 0 ? (
-          <p className="text-gray-500 text-sm">
+          <p data-testid="installments" className="text-gray-500 text-sm">
             或分 {data.installments} 期，每期
             <span className="font-bold">
               ${(data.price / data.installments).toFixed(2)}
@@ -130,6 +130,7 @@ export const Product: FC<ProductProps> = (props) => {
           <div className="text-sm whitespace-pre"> </div>
         )}
         <Button
+          data-testid="add-product"
           className="mt-2"
           type="primary"
           ghost

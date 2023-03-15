@@ -7,6 +7,7 @@ specifiers:
   '@babel/plugin-transform-react-jsx': ^7.21.0
   '@emotion/react': ^11.10.6
   '@emotion/styled': ^11.10.6
+  '@playwright/test': ^1.31.2
   '@tanstack/react-query': ^4.26.1
   '@tanstack/react-query-devtools': ^4.26.1
   '@testing-library/dom': ^9.0.1
@@ -56,6 +57,7 @@ devDependencies:
   '@babel/core': 7.21.0
   '@babel/plugin-syntax-flow': 7.18.6_@babel+core@7.21.0
   '@babel/plugin-transform-react-jsx': 7.21.0_@babel+core@7.21.0
+  '@playwright/test': 1.31.2
   '@testing-library/dom': 9.0.1
   '@types/testing-library__jest-dom': 5.14.5
   tailwindcss: 3.2.7
@@ -2123,6 +2125,17 @@ packages:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.15.0
 
+  /@playwright/test/1.31.2:
+    resolution: {integrity: sha512-BYVutxDI4JeZKV1+ups6dt5WiqKhjBtIYowyZIJ3kBDmJgsuPKsqqKNIMFbUePLSCmp2cZu+BDL427RcNKTRYw==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dependencies:
+      '@types/node': 16.18.14
+      playwright-core: 1.31.2
+    optionalDependencies:
+      fsevents: 2.3.2
+    dev: true
+
   /@pmmmwh/react-refresh-webpack-plugin/0.5.10_ycskgacsltiwe6eygivlckbbui:
     resolution: {integrity: sha512-j0Ya0hCFZPd4x40qLzbhGsh9TMtdb+CJQiso+WxLOPNasohq9cc5SNUcwsZaRH6++Xh91Xkm/xHCkuIiIu0LUA==}
     engines: {node: '>= 10.13'}
@@ -2709,7 +2722,6 @@ packages:
 
   /@types/node/16.18.14:
     resolution: {integrity: sha512-wvzClDGQXOCVNU4APPopC2KtMYukaF1MN/W3xAmslx22Z4/IF1/izDMekuyoUlwfnDHYCIZGaj7jMwnJKBTxKw==}
-    dev: false
 
   /@types/parse-json/4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
@@ -7550,6 +7562,12 @@ packages:
     dependencies:
       find-up: 3.0.0
     dev: false
+
+  /playwright-core/1.31.2:
+    resolution: {integrity: sha512-a1dFgCNQw4vCsG7bnojZjDnPewZcw7tZUNFN0ZkcLYKj+mPmXvg4MpaaKZ5SgqPsOmqIf2YsVRkgqiRDxD+fDQ==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dev: true
 
   /postcss-attribute-case-insensitive/5.0.2_postcss@8.4.21:
     resolution: {integrity: sha512-XIidXV8fDr0kKt28vqki84fRK8VW8eTuIa4PChv2MqKuT6C9UjmSKzen6KaWhWEoYvwxFCa7n/tC1SZ3tyq4SQ==}

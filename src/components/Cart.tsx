@@ -21,7 +21,7 @@ const ProductItem: FC<ProductItemProps> = (props) => {
   const changeProductAmount = useStore((state) => state.changeProductAmount);
 
   return (
-    <div className="flex items-start overflow-hidden">
+    <div data-testid="cart-product" className="flex items-start overflow-hidden">
       <img
         className="w-16 h-24 object-cover"
         src={`static/products/${product.sku}-1-product.webp`}
